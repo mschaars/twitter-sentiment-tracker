@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class TrackerBolt extends BaseRichBolt {
 
-    private static ConcurrentHashMap<String, FilterItem> matches = new ConcurrentHashMap<>();;
+    private static ConcurrentHashMap<String, FilterItem> statistics = new ConcurrentHashMap<>();;
     private static AtomicInteger tweets = new AtomicInteger(0);
     private String[] topics;
     private static DB mongoDB;
@@ -28,28 +28,34 @@ public class TrackerBolt extends BaseRichBolt {
     public TrackerBolt(String[] topics) {
         this.topics = topics;
         mongoDB = MongoClient.getDBInstance("localhost", "sentiment", WriteConcern.ACKNOWLEDGED);
-        coll = mongoDB.getCollection("tracking");
+        coll = mongoDB.getCollection("sentiment");
 
-     //   recoverStatistics();
+       recoverStatistics();
     }
 
+    /**
+     * Loads previous statistics on a topic from MongoDB
+     * to allow for interrupted tracking sessions.
+     */
     private void recoverStatistics() {
-
-        BasicDBObject dbObject = new BasicDBObject("_id", "topic_matches");
+        BasicDBObject dbObject = new BasicDBObject("_id", "last_values");
         DBObject result = coll.findOne(dbObject);
-
-        //"{\"_id\" : \"topic_matches\"}"
 
         if (result != null) {
             LinkedHashMap<String, Object> values = (LinkedHashMap<String, Object>) result.toMap();
-            Map obj = (Map) values.get("matches");
+            LinkedHashMap<String, Object> matches = (LinkedHashMap<String, Object>) values.get("matches");
+            LinkedHashMap<String, Object> totalCounters = (LinkedHashMap<String, Object>) values.get("total");
 
-            for (Object e : obj.entrySet()) {
-//
+            for (Map.Entry<String, Object> entry : matches.entrySet()) {
+                int i = (int) entry.getValue();
+                int k = (int) totalCounters.get(entry.getKey());
+                statistics.put(entry.getKey(), new FilterItem(k, i));
             }
 
-            for (Map.Entry<String, FilterItem> entry : matches.entrySet()) {
-                System.out.println(entry.getKey() + " value = " + entry.getValue());
+            for (Map.Entry<String, FilterItem> entry : statistics.entrySet()) {
+                System.out.println(entry.getKey() + " value = " + entry.getValue().matchCounter);
+                System.out.println(entry.getKey() + " value = " + entry.getValue().totalCounter);
+
             }
         }
         else {
@@ -70,7 +76,7 @@ public class TrackerBolt extends BaseRichBolt {
         GeoLocation location = (GeoLocation) tuple.getValueByField("location");
         boolean match = containsTopics( (String[]) tuple.getValueByField("words"));
 
-        matches.compute(LocationService.getCountry(location), (k, v) -> {
+        statistics.compute(LocationService.getCountry(location), (k, v) -> {
             if (v == null) {
                 return match ? new FilterItem(1, 1) : new FilterItem(1, 0);
             }
@@ -82,7 +88,7 @@ public class TrackerBolt extends BaseRichBolt {
         });
 
 /*        else {
-            matches.compute("none", (k, v) -> {
+            statistics.compute("none", (k, v) -> {
                 if (v == null) {
                     return new data.FilterItem(1, 0);
                 }
@@ -128,7 +134,7 @@ public class TrackerBolt extends BaseRichBolt {
         Map<Object, Object> matchValues = new HashMap<>();
         Map<Object, Object> totalValues = new HashMap<>();
 
-        for (Map.Entry<String, FilterItem> entry : matches.entrySet()) {
+        for (Map.Entry<String, FilterItem> entry : statistics.entrySet()) {
             FilterItem data = entry.getValue();
             String key = entry.getKey();
             matchValues.put(key, data.matchCounter);
@@ -151,10 +157,10 @@ public class TrackerBolt extends BaseRichBolt {
      * Print current statistics to terminal.
      */
     public void printCounts() {
-        for (Map.Entry<String, FilterItem> e : matches.entrySet()) {
+        for (Map.Entry<String, FilterItem> e : statistics.entrySet()) {
             FilterItem filterItem = e.getValue();
             System.out.println("Location = " + e.getKey() + ", tweets = " + filterItem.totalCounter
-                    + ", topic matches = " + filterItem.matchCounter);
+                    + ", topic statistics = " + filterItem.matchCounter);
 
         }
 
