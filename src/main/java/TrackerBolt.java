@@ -3,6 +3,7 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
+import data.FilterItem;
 import twitter4j.GeoLocation;
 
 import java.util.Map;
@@ -48,7 +49,7 @@ public class TrackerBolt extends BaseRichBolt {
 /*        else {
             matches.compute("none", (k, v) -> {
                 if (v == null) {
-                    return new FilterItem(1, 0);
+                    return new data.FilterItem(1, 0);
                 }
 
                 v.totalCounter++;

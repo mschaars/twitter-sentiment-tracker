@@ -1,10 +1,12 @@
+package data;
+
 /**
  * Wrapper for counter.
  */
 public class FilterItem  {
     // Need fast access..
-    int totalCounter;
-    int matchCounter;
+    public int totalCounter;
+    public int matchCounter;
 
     public FilterItem(int totalCounter, int matchCounter) {
         this.totalCounter = totalCounter;
