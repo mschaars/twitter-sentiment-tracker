@@ -1,0 +1,56 @@
+import backtype.storm.Config;
+import backtype.storm.LocalCluster;
+import backtype.storm.topology.TopologyBuilder;
+import twitter4j.TwitterStream;
+import twitter4j.TwitterStreamFactory;
+import twitter4j.auth.AccessToken;
+
+/**
+ * Created by Michael on 18.11.2014.
+ */
+public class Bootstrap {
+
+    static final String TOPOLOGY_NAME = "sentiment-tracker";
+    private static final AccessToken accessToken = new AccessToken("2881734113-OIqRfzJt9oj904mXRCKoo7sVgbhCcjRnO4Rvl6g",
+            "r1nJBNgPitqKoVtBVBfBwWUIDnWGgMbgwYRmOpinBVnVr");
+    private static final String oAuthConsumer = "VyGyG0F3wWk2c6LMzPIUh7BSR";
+    private static final String oAuthSecret = "yuR1EV2yrthnvZMofqPChTgRckGtte3xjGicaatIpMem6VdT8g";
+
+    public static void main(String[] args) {
+        Config config = new Config();
+        config.setMessageTimeoutSecs(120);
+
+        String[] topics = {"#ferguson"};
+        String[] languages = {"en"};
+        double[][] locations = new double[][] {
+                {-125.7,28.9},{-67.0,55.5},
+          //      {-74.2589,40.4766},{-73.7004,40.9176},
+                {77.0059,28.4266}, {77.4352,28.7886},
+                {-11.4742,4.3154}, {-7.3693,8.552}
+        };
+
+        authToTwitterStream();
+        TopologyBuilder b = new TopologyBuilder();
+        b.setSpout("TwitterSpout", new TwitterStreamSpout(null, locations, languages));
+        b.setBolt("FilterBolt", new FilterBolt()).shuffleGrouping("TwitterSpout");
+        b.setBolt("TrackerBolt", new TrackerBolt(topics)).shuffleGrouping("FilterBolt");
+
+        final LocalCluster cluster = new LocalCluster();
+        cluster.submitTopology(TOPOLOGY_NAME, config, b.createTopology());
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+
+            @Override
+            public void run() {
+                cluster.killTopology(TOPOLOGY_NAME);
+                cluster.shutdown();
+            }
+        });
+    }
+
+    private static void authToTwitterStream() {
+        TwitterStream twitterStream = TwitterStreamFactory.getSingleton();
+        twitterStream.setOAuthConsumer(oAuthConsumer, oAuthSecret);
+        twitterStream.setOAuthAccessToken(accessToken);
+    }
+}
