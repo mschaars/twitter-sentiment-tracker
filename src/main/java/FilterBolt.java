@@ -32,7 +32,7 @@ public class FilterBolt extends BaseRichBolt {
             outputCollector.emit(new Values(words, location));
         }
 
-       System.out.println("["+ tweet.getCreatedAt().toString() +"]" + tweet.getText());
+       //System.out.println("["+ tweet.getCreatedAt().toString() +"]" + tweet.getText());
     }
 
     @Override

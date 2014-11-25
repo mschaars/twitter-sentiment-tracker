@@ -20,10 +20,11 @@ public class Bootstrap {
         Config config = new Config();
         config.setMessageTimeoutSecs(120);
 
-        String[] topics = {"#Ferguson",};
+        String[] topics = {"#Ferguson","#ferguson"};
         String[] languages = {"en"};
         double[][] locations = new double[][] {
-                {-125.7,28.9},{-67.0,55.5},
+                {-95.77,29.11}, {-79.61,40.61}
+               // {-125.7,28.9},{-67.0,55.5},
         };
 
         authToTwitterStream();

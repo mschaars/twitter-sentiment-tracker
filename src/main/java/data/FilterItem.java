@@ -3,7 +3,7 @@ package data;
 /**
  * Wrapper for counter.
  */
-public class FilterItem  {
+public class FilterItem {
     // Need fast access..
     public int totalCounter;
     public int matchCounter;
