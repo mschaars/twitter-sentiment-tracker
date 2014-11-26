@@ -20,10 +20,11 @@ public class Bootstrap {
         Config config = new Config();
         config.setMessageTimeoutSecs(120);
 
-        String[] topics = {"#Ferguson","#ferguson"};
+        String[] topics = {"#Ferguson","#ferguson", "#FergusonDecision"};
         String[] languages = {"en"};
         double[][] locations = new double[][] {
-                {-95.77,29.11}, {-79.61,40.61}
+                {-95.77,29.11}, {-79.61,40.61},
+                {-74.2591,40.496}, {-73.7003,40.9153}
                // {-125.7,28.9},{-67.0,55.5},
         };
 

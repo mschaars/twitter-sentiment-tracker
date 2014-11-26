@@ -28,41 +28,12 @@ public class TrackerBolt extends BaseRichBolt {
     public TrackerBolt(String[] topics) {
         this.topics = topics;
         mongoDB = MongoClient.getDBInstance("localhost", "sentiment", WriteConcern.ACKNOWLEDGED);
-        coll = mongoDB.getCollection("sentiment");
+        coll = mongoDB.getCollection("ferguson");
 
        recoverStatistics();
     }
 
-    /**
-     * Loads previous statistics on a topic from MongoDB
-     * to allow for interrupted tracking sessions.
-     */
-    private void recoverStatistics() {
-        BasicDBObject dbObject = new BasicDBObject("_id", "last_values");
-        DBObject result = coll.findOne(dbObject);
 
-        if (result != null) {
-            LinkedHashMap<String, Object> values = (LinkedHashMap<String, Object>) result.toMap();
-            LinkedHashMap<String, Object> matches = (LinkedHashMap<String, Object>) values.get("matches");
-            LinkedHashMap<String, Object> totalCounters = (LinkedHashMap<String, Object>) values.get("total");
-
-            for (Map.Entry<String, Object> entry : matches.entrySet()) {
-                int i = (int) entry.getValue();
-                int k = (int) totalCounters.get(entry.getKey());
-                statistics.put(entry.getKey(), new FilterItem(k, i));
-            }
-
-            for (Map.Entry<String, FilterItem> entry : statistics.entrySet()) {
-                System.out.println(entry.getKey() + " value = " + entry.getValue().matchCounter);
-                System.out.println(entry.getKey() + " value = " + entry.getValue().totalCounter);
-
-            }
-        }
-        else {
-            System.out.println("No previous statistics found");
-        }
-
-    }
 
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
@@ -76,7 +47,7 @@ public class TrackerBolt extends BaseRichBolt {
         GeoLocation location = (GeoLocation) tuple.getValueByField("location");
         boolean match = containsTopics( (String[]) tuple.getValueByField("words"));
 
-        statistics.compute(LocationService.getCountry(location), (k, v) -> {
+        statistics.compute(LocationService.getNameForLocation(location), (k, v) -> {
             if (v == null) {
                 return match ? new FilterItem(1, 1) : new FilterItem(1, 0);
             }
@@ -98,7 +69,7 @@ public class TrackerBolt extends BaseRichBolt {
             });
         }*/
 
-        if (tweets.intValue() % 500 == 0) {
+        if (tweets.intValue() % 5000 == 0) {
             printCounts();
             exportCounts();
         }
@@ -154,17 +125,48 @@ public class TrackerBolt extends BaseRichBolt {
     }
 
     /**
+     * Loads previous statistics on a topic from MongoDB
+     * to allow for interrupted tracking sessions.
+     */
+    private void recoverStatistics() {
+        BasicDBObject dbObject = new BasicDBObject("_id", "last_values");
+        DBObject result = coll.findOne(dbObject);
+
+        if (result != null) {
+            LinkedHashMap<String, Object> values = (LinkedHashMap<String, Object>) result.toMap();
+            LinkedHashMap<String, Object> matches = (LinkedHashMap<String, Object>) values.get("matches");
+            LinkedHashMap<String, Object> totalCounters = (LinkedHashMap<String, Object>) values.get("total");
+
+            for (Map.Entry<String, Object> entry : matches.entrySet()) {
+                int i = (int) entry.getValue();
+                int k = (int) totalCounters.get(entry.getKey());
+                statistics.put(entry.getKey(), new FilterItem(k, i));
+            }
+            System.out.println("Loading previous statistics..");
+            for (Map.Entry<String, FilterItem> entry : statistics.entrySet()) {
+                System.out.println(entry.getKey() + " matches = " + entry.getValue().matchCounter);
+                System.out.println(entry.getKey() + " total = " + entry.getValue().totalCounter);
+
+            }
+        }
+        else {
+            System.out.println("No previous statistics found");
+        }
+    }
+
+    /**
      * Print current statistics to terminal.
      */
     public void printCounts() {
         for (Map.Entry<String, FilterItem> e : statistics.entrySet()) {
             FilterItem filterItem = e.getValue();
             System.out.println("Location = " + e.getKey() + ", tweets = " + filterItem.totalCounter
-                    + ", topic statistics = " + filterItem.matchCounter);
+                    + ", topic related = " + filterItem.matchCounter);
 
         }
 
         System.out.println("Total tweets seen = " + tweets.toString() +"\n ###############################");
     }
+
 
 }

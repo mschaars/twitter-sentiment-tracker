@@ -44,11 +44,11 @@ public class GeoName extends KDNodeComparator<GeoName> {
     GeoName(String data) {
         String[] names = data.split("\t");
         name = names[1];
-        majorPlace = names[6].equals("P");
-        latitude = Double.parseDouble(names[4]);
-        longitude = Double.parseDouble(names[5]);
+        majorPlace = names[4].equals("P");
+        latitude = Double.parseDouble(names[2]);
+        longitude = Double.parseDouble(names[3]);
         setPoint();
-        country = names[8];
+        country = names[5];
     }
 
     GeoName(Double latitude, Double longitude) {
