@@ -20,11 +20,12 @@ public class Bootstrap {
         Config config = new Config();
         config.setMessageTimeoutSecs(120);
 
-        String[] topics = {"#Ferguson","#ferguson", "#FergusonDecision"};
+        String collection ="theforceawakens";
+        String[] topics = {"#TheForceAwakens", "#StarWars"};
         String[] languages = {"en"};
         double[][] locations = new double[][] {
-                {-95.77,29.11}, {-79.61,40.61},
-                {-74.2591,40.496}, {-73.7003,40.9153}
+                {-124.6,18.9},{-67.0,53.6},
+                //{-74.2591,40.496}, {-73.7003,40.9153}
                // {-125.7,28.9},{-67.0,55.5},
         };
 
@@ -32,7 +33,7 @@ public class Bootstrap {
         TopologyBuilder b = new TopologyBuilder();
         b.setSpout("TwitterSpout", new TwitterStreamSpout(null, locations, languages));
         b.setBolt("FilterBolt", new FilterBolt()).shuffleGrouping("TwitterSpout");
-        b.setBolt("TrackerBolt", new TrackerBolt(topics)).shuffleGrouping("FilterBolt");
+        b.setBolt("TrackerBolt", new TrackerBolt(topics, collection)).shuffleGrouping("FilterBolt");
 
         final LocalCluster cluster = new LocalCluster();
         cluster.submitTopology(TOPOLOGY_NAME, config, b.createTopology());

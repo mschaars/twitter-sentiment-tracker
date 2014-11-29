@@ -62,6 +62,8 @@
     <orderEntry type="library" name="Maven: com.googlecode.disruptor:disruptor:2.10.1" level="project" />
     <orderEntry type="library" name="Maven: storm:jgrapht:0.8.3" level="project" />
     <orderEntry type="library" name="Maven: org.mongodb:mongo-java-driver:2.12.4" level="project" />
+    <orderEntry type="library" name="Maven: com.clearspring.analytics:stream:2.7.0" level="project" />
+    <orderEntry type="library" name="Maven: it.unimi.dsi:fastutil:6.5.7" level="project" />
   </component>
 </module>
 

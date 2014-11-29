@@ -74,6 +74,7 @@ public class TwitterStreamSpout extends BaseRichSpout {
 
         TwitterStream twitterStream =  TwitterStreamFactory.getSingleton();
         twitterStream.addListener(listener);
+
         FilterQuery filterQuery = new FilterQuery();
         filterQuery = filterQuery.language(languages).locations(locations).track(topics);
         twitterStream.filter(filterQuery);
@@ -83,7 +84,7 @@ public class TwitterStreamSpout extends BaseRichSpout {
     public void nextTuple() {
         Status ret = incomingQueue.poll();
         if (ret == null) {
-            Utils.sleep(50);
+            Utils.sleep(25);
         } else {
             spoutOutputCollector.emit(new Values(ret));
         }
