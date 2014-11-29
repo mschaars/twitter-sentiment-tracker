@@ -5,6 +5,7 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
 import com.clearspring.analytics.stream.ConcurrentStreamSummary;
 import com.clearspring.analytics.stream.ScoredItem;
+import com.google.common.primitives.Ints;
 import com.mongodb.*;
 import data.FilterItem;
 import data.MongoClient;
@@ -26,9 +27,9 @@ public class TrackerBolt extends BaseRichBolt {
 
     private static Set<String> stopWords = new HashSet<String>(Arrays.asList(new String[] {
             "I", "http", "the", "you", "and", "for", "that", "like", "have", "this", "just", "with", "all", "get", "about",
-            "can", "was", "not", "your", "but", "are", "one", "what", "out", "when", "get", "lol", "now",
+            "can", "was", "not", "your", "but", "are", "one", "what", "out", "when", "get","of", "lol", "now",
             "want", "will", "know", "good", "from","people", "got", "why", "time", "would", "it","can't",
-            "me", "to"
+            "me", "to","is"
     }));
 
     private static AtomicInteger tweets = new AtomicInteger(0);
@@ -38,7 +39,7 @@ public class TrackerBolt extends BaseRichBolt {
 
     public TrackerBolt(String[] topics, String collection) {
         this.topics = topics;
-        mongoDB = MongoClient.getDBInstance("localhost", "sentiment", WriteConcern.ACKNOWLEDGED);
+        mongoDB = MongoClient.getDBInstance("localhost", "testing", WriteConcern.ACKNOWLEDGED);
         coll = mongoDB.getCollection(collection);
 
        recoverStatistics();
@@ -164,7 +165,7 @@ public class TrackerBolt extends BaseRichBolt {
             }
             if (topK != null) {
                 for (Map.Entry<String, Object> entry : topK.entrySet()) {
-                    heavyHitters.offer(entry.getKey(), (int) entry.getValue());
+                    heavyHitters.offer(entry.getKey(), Ints.checkedCast((long)entry.getValue()));
                 }
             }
 
