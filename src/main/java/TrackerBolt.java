@@ -26,7 +26,7 @@ public class TrackerBolt extends BaseRichBolt {
     private static ConcurrentStreamSummary<String> heavyHitters = new ConcurrentStreamSummary<>(10);
 
     private static Set<String> stopWords = new HashSet<String>(Arrays.asList(new String[] {
-            "I", "http", "the", "you", "and", "for", "that", "like", "have", "this", "just", "with", "all", "get", "about",
+            "I", ",", "http", "the", "you", "and", "for", "that", "like", "have", "this", "just", "with", "all", "get", "about",
             "can", "was", "not", "your", "but", "are", "one", "what", "out", "when", "get","of", "lol", "now",
             "want", "will", "know", "good", "from","people", "got", "why", "time", "would", "it","can't",
             "me", "to","is"
@@ -85,6 +85,7 @@ public class TrackerBolt extends BaseRichBolt {
     private boolean containsTopics(String[] words) {
         for (String word : words) {
                 for (String topic : topics) {
+
                 if (word.equals(topic)) {
                     captureSentiment(words);
                     return true;
@@ -94,6 +95,7 @@ public class TrackerBolt extends BaseRichBolt {
         return false;
     }
 
+    //TODO investigate calls to this
     private void captureSentiment(String[] words) {
         for (String word : words) {
             if (!stopWords.contains(word)) {
@@ -192,8 +194,9 @@ public class TrackerBolt extends BaseRichBolt {
                     + ", topic related = " + filterItem.matchCounter);
 
         }
+        System.out.println("Most popular words in relevant tweets:");
         for (ScoredItem<String> item : scores) {
-            System.out.println("item = " + item.getItem() + ", count = " + item.getCount());
+            System.out.println("Word = " + item.getItem() + ", count = " + item.getCount());
         }
 
         System.out.println("Total tweets this session = " + tweets.toString() +"\n ###############################");
