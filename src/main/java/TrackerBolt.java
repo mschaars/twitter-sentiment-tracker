@@ -26,7 +26,7 @@ public class TrackerBolt extends BaseRichBolt {
     private static ConcurrentStreamSummary<String> heavyHitters = new ConcurrentStreamSummary<>(10);
 
     private static Set<String> stopWords = new HashSet<String>(Arrays.asList(new String[] {
-            "I", ",", "http", "the", "you", "and", "for", "that", "like", "have", "this", "just", "with", "all", "get", "about",
+            "I", ",", "http", "the","The", "you", "and", "for", "that", "like", "have", "this", "just", "with", "all", "get", "about",
             "can", "was", "not", "your", "but", "are", "one", "what", "out", "when", "get","of", "lol", "now",
             "want", "will", "know", "good", "from","people", "got", "why", "time", "would", "it","can't",
             "me", "to","is"
@@ -99,7 +99,7 @@ public class TrackerBolt extends BaseRichBolt {
     private void captureSentiment(String[] words) {
         for (String word : words) {
             if (!stopWords.contains(word)) {
-                if (word.contains(".")) {
+                if (word.contains(".") || word.contains("$")) {
                     word = word.replace("."," ");
                 }
                 heavyHitters.offer(word);

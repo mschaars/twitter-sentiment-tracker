@@ -20,8 +20,8 @@ public class Bootstrap {
         Config config = new Config();
         config.setMessageTimeoutSecs(120);
 
-        String collection ="theforceawakens";
-        String[] topics = {"#TheForceAwakens", "#StarWars"};
+        String collection ="cyberm";
+        String[] topics = {"#cybermonday"};
         String[] languages = {"en"};
         double[][] locations = new double[][] {
                 {-124.6,18.9},{-67.0,53.6},
