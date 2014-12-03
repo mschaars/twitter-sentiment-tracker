@@ -21,8 +21,8 @@ public class TopKList<E extends Serializable> {
                 SketchComparator<E>(sketch));
     }
 
-    public void add(E element) {
-        sketch.increment(element);
+    public void add(E element, int c) {
+        sketch.increment(element, c);
         heap.add(element);
         while(heap.size() > k) {
             heap.remove();
@@ -39,5 +39,9 @@ public class TopKList<E extends Serializable> {
             return list;
         }
         return null;
+    }
+
+    public long getCount(E e) {
+        return sketch.getCount(e);
     }
 }

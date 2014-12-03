@@ -33,9 +33,9 @@ public class CountMinSketch<E extends Serializable> {
      * Wordcounts are only incremented one at a time.
      * @return
      */
-    public void increment(Object obj) {
+    public void increment(Object obj, int counter) {
         for (int i = 0; i < depth; i++) {
-            grid[i][hash(obj, i)]++;
+            grid[i][hash(obj, i)] += counter;
         }
         size++;
     }

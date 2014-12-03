@@ -3,12 +3,12 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
-import com.clearspring.analytics.stream.ConcurrentStreamSummary;
-import com.clearspring.analytics.stream.ScoredItem;
 import com.google.common.primitives.Ints;
 import com.mongodb.*;
+import data.CountMinSketch;
 import data.FilterItem;
 import data.MongoClient;
+import data.TopKList;
 import twitter4j.GeoLocation;
 
 import java.util.*;
@@ -23,13 +23,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TrackerBolt extends BaseRichBolt {
 
     private static ConcurrentHashMap<String, FilterItem> statistics = new ConcurrentHashMap<>();
-    private static ConcurrentStreamSummary<String> heavyHitters = new ConcurrentStreamSummary<>(10);
+    private static TopKList<String> topList;
 
-    private static Set<String> stopWords = new HashSet<String>(Arrays.asList(new String[] {
-            "I", ",", "http", "the","The", "you", "and", "for", "that", "like", "have", "this", "just", "with", "all", "get", "about",
-            "can", "was", "not", "your", "but", "are", "one", "what", "out", "when", "get","of", "lol", "now",
-            "want", "will", "know", "good", "from","people", "got", "why", "time", "would", "it","can't",
-            "me", "to","is"
+    private static Set<String> stopWords = new HashSet<String>(Arrays.asList(new String[]{
+            "I", ",", "http", "the", "The", "you", "and", "for", "that", "like", "have", "this", "just", "with", "all", "get", "about",
+            "can", "was", "not", "your", "but", "are", "one", "what", "out", "when", "get", "of", "lol", "now",
+            "want", "will", "know", "good", "from", "people", "got", "why", "time", "would", "it", "can't",
+            "me", "to", "is"
     }));
 
     private static AtomicInteger tweets = new AtomicInteger(0);
@@ -42,9 +42,11 @@ public class TrackerBolt extends BaseRichBolt {
         mongoDB = MongoClient.getDBInstance("localhost", "testing", WriteConcern.ACKNOWLEDGED);
         coll = mongoDB.getCollection(collection);
 
-       recoverStatistics();
-    }
+        CountMinSketch<String> sketch = new CountMinSketch<>(100, 100, 10);
+        topList = new TopKList<>(10, sketch);
 
+        //recoverStatistics();
+    }
 
 
     @Override
@@ -57,7 +59,7 @@ public class TrackerBolt extends BaseRichBolt {
         tweets.incrementAndGet();
 
         GeoLocation location = (GeoLocation) tuple.getValueByField("location");
-        boolean match = containsTopics( (String[]) tuple.getValueByField("words"));
+        boolean match = containsTopics((String[]) tuple.getValueByField("words"));
 
         statistics.compute(LocationService.getNameForLocation(location), (k, v) -> {
             if (v == null) {
@@ -79,30 +81,30 @@ public class TrackerBolt extends BaseRichBolt {
     /**
      * Checks if an array of words contains at
      * least one topic-related word.
+     *
      * @param words
      * @return
      */
     private boolean containsTopics(String[] words) {
+        captureSentiment(words);
         for (String word : words) {
-                for (String topic : topics) {
-
+            for (String topic : topics) {
                 if (word.equals(topic)) {
-                    captureSentiment(words);
                     return true;
                 }
             }
         }
         return false;
+
     }
 
-    //TODO investigate calls to this
     private void captureSentiment(String[] words) {
         for (String word : words) {
             if (!stopWords.contains(word)) {
                 if (word.contains(".") || word.contains("$")) {
-                    word = word.replace("."," ");
+                    word = word.replace(".", " ");
                 }
-                heavyHitters.offer(word);
+                topList.add(word, 1);
             }
         }
     }
@@ -127,11 +129,11 @@ public class TrackerBolt extends BaseRichBolt {
             totalValues.put(key, data.totalCounter);
         }
 
-        List<ScoredItem<String>> topK = heavyHitters.peekWithScores(10);
+        List<String> topK = topList.getTopKElements();
         Map<Object, Object> hitters = new HashMap<>();
 
-        for (ScoredItem<String> entry : topK) {
-            hitters.put(entry.getItem(), entry.getCount());
+        for (String s : topK) {
+            hitters.put(s, topList.getCount(s));
         }
 
         BasicDBObject obj = new BasicDBObject("_id", "last_values").append("matches", matchValues).
@@ -139,9 +141,8 @@ public class TrackerBolt extends BaseRichBolt {
 
         if (coll.count() == 0) {
             coll.insert(obj);
-        }
-        else {
-            BasicDBObject q = new BasicDBObject("_id","last_values");
+        } else {
+            BasicDBObject q = new BasicDBObject("_id", "last_values");
             coll.update(q, obj);
         }
     }
@@ -167,7 +168,7 @@ public class TrackerBolt extends BaseRichBolt {
             }
             if (topK != null) {
                 for (Map.Entry<String, Object> entry : topK.entrySet()) {
-                    heavyHitters.offer(entry.getKey(), Ints.checkedCast((long)entry.getValue()));
+                    topList.add(entry.getKey(), Ints.checkedCast((long) entry.getValue()));
                 }
             }
 
@@ -177,8 +178,7 @@ public class TrackerBolt extends BaseRichBolt {
                 System.out.println(entry.getKey() + " total = " + entry.getValue().totalCounter);
 
             }
-        }
-        else {
+        } else {
             System.out.println("No previous statistics found");
         }
     }
@@ -187,7 +187,7 @@ public class TrackerBolt extends BaseRichBolt {
      * Print current statistics to terminal.
      */
     public void printCounts() {
-        List<ScoredItem<String>> scores = heavyHitters.peekWithScores(10);
+        List<String> scores = topList.getTopKElements();
         for (Map.Entry<String, FilterItem> e : statistics.entrySet()) {
             FilterItem filterItem = e.getValue();
             System.out.println("Location = " + e.getKey() + ", tweets = " + filterItem.totalCounter
@@ -195,11 +195,11 @@ public class TrackerBolt extends BaseRichBolt {
 
         }
         System.out.println("Most popular words in relevant tweets:");
-        for (ScoredItem<String> item : scores) {
-            System.out.println("Word = " + item.getItem() + ", count = " + item.getCount());
+        for (String item : scores) {
+            System.out.println("Word = " + item + ", count = " + topList.getCount(item));
         }
 
-        System.out.println("Total tweets this session = " + tweets.toString() +"\n ###############################");
+        System.out.println("Total tweets this session = " + tweets.toString() + "\n ###############################");
     }
 
 
