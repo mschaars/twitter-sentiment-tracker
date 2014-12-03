@@ -4,8 +4,8 @@ import java.io.Serializable;
 import java.util.Random;
 
 /**
- * Custom implementation of the count-min-sketch data structure
- * for Strings.
+ * Minimalistic implementation of the
+ * count-min-sketch data structure.
  */
 public class CountMinSketch<E extends Serializable> {
     private int width = 0;
@@ -31,32 +31,30 @@ public class CountMinSketch<E extends Serializable> {
 
     /**
      * Wordcounts are only incremented one at a time.
-     * @param str
      * @return
      */
-    public void increment(String str) {
+    public void increment(Object obj) {
         for (int i = 0; i < depth; i++) {
-            grid[i][hash(str, i)]++;
+            grid[i][hash(obj, i)]++;
         }
         size++;
     }
 
-    public long getCount(String str) {
+    public long getCount(Object obj) {
         long count = Integer.MAX_VALUE;
         for (int i = 0; i < depth; i++) {
-            count = Math.min(count, grid[i][hash(str, i)]);
+            count = Math.min(count, grid[i][hash(obj, i)]);
         }
         return count;
 
     }
-    /**
-     * String hashing.
-     * @param str
-     * @param i
-     * @return
-     */
-    private int hash(String str, int i) {
+
+    private int hash(Object obj, int i) {
         long hash = hashes[i];
-        return Math.abs(((int)(str.hashCode() * hash)) % width);
+        return Math.abs(((int)(obj.hashCode() * hash)) % width);
+    }
+
+    public int getSize() {
+        return size;
     }
 }
