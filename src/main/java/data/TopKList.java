@@ -14,17 +14,18 @@ public class TopKList<E extends Serializable> {
 
     int k = Integer.MAX_VALUE;
 
-    public TopKList(int k,CountMinSketch<E> sketch) {
+    public TopKList(int k, CountMinSketch<E> sketch) {
         this.sketch = sketch;
         this.k = k;
-        this.heap = new PriorityQueue<E>(k+1,new
+        this.heap = new PriorityQueue<E>(k, new
                 SketchComparator<E>(sketch));
     }
 
     public void add(E element, int c) {
         sketch.increment(element, c);
         heap.add(element);
-        while(heap.size() > k) {
+
+        while (heap.size() > k) {
             heap.remove();
         }
     }

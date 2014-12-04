@@ -5,10 +5,8 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
 import com.google.common.primitives.Ints;
 import com.mongodb.*;
-import data.CountMinSketch;
-import data.FilterItem;
+import data.*;
 import data.MongoClient;
-import data.TopKList;
 import twitter4j.GeoLocation;
 
 import java.util.*;
@@ -24,6 +22,7 @@ public class TrackerBolt extends BaseRichBolt {
 
     private static ConcurrentHashMap<String, FilterItem> statistics = new ConcurrentHashMap<>();
     private static TopKList<String> topList;
+    private static HashSet<String> allWords = new HashSet<>();
 
     private static Set<String> stopWords = new HashSet<String>(Arrays.asList(new String[]{
             "I", ",", "http", "the", "The", "you", "and", "for", "that", "like", "have", "this", "just", "with", "all", "get", "about",
@@ -39,13 +38,13 @@ public class TrackerBolt extends BaseRichBolt {
 
     public TrackerBolt(String[] topics, String collection) {
         this.topics = topics;
-        mongoDB = MongoClient.getDBInstance("localhost", "testing", WriteConcern.ACKNOWLEDGED);
+        mongoDB = MongoClient.getDBInstance("localhost", "ericgarner", WriteConcern.ACKNOWLEDGED);
         coll = mongoDB.getCollection(collection);
 
         CountMinSketch<String> sketch = new CountMinSketch<>(100, 100, 10);
-        topList = new TopKList<>(10, sketch);
+        topList = new TopKList<>(20, sketch);
 
-        //recoverStatistics();
+        recoverStatistics();
     }
 
 
@@ -59,7 +58,12 @@ public class TrackerBolt extends BaseRichBolt {
         tweets.incrementAndGet();
 
         GeoLocation location = (GeoLocation) tuple.getValueByField("location");
-        boolean match = containsTopics((String[]) tuple.getValueByField("words"));
+        String[] words = (String[]) tuple.getValueByField("words");
+        boolean match = containsTopics(words);
+
+        if (match) {
+            captureSentiment(words);
+        }
 
         statistics.compute(LocationService.getNameForLocation(location), (k, v) -> {
             if (v == null) {
@@ -72,7 +76,7 @@ public class TrackerBolt extends BaseRichBolt {
             return v;
         });
 
-        if (tweets.intValue() % 500 == 0) {
+        if (tweets.intValue() % 1000 == 0) {
             printCounts();
             exportCounts();
         }
@@ -86,8 +90,8 @@ public class TrackerBolt extends BaseRichBolt {
      * @return
      */
     private boolean containsTopics(String[] words) {
-        captureSentiment(words);
         for (String word : words) {
+            //    allWords.add(word);
             for (String topic : topics) {
                 if (word.equals(topic)) {
                     return true;
@@ -187,6 +191,8 @@ public class TrackerBolt extends BaseRichBolt {
      * Print current statistics to terminal.
      */
     public void printCounts() {
+        //System.out.println("unique words = " + allWords.size());
+
         List<String> scores = topList.getTopKElements();
         for (Map.Entry<String, FilterItem> e : statistics.entrySet()) {
             FilterItem filterItem = e.getValue();

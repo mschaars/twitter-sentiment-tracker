@@ -28,7 +28,7 @@ public class FilterBolt extends BaseRichBolt {
         GeoLocation location = tweet.getGeoLocation();
 
         if (location != null) {
-            String[] words = tweet.getText().split(" ");
+            String[] words = tweet.getText().toLowerCase().split(" ");
             outputCollector.emit(new Values(words, location));
         }
 

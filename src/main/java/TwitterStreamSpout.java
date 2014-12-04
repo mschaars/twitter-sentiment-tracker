@@ -76,7 +76,7 @@ public class TwitterStreamSpout extends BaseRichSpout {
         twitterStream.addListener(listener);
 
         FilterQuery filterQuery = new FilterQuery();
-        filterQuery = filterQuery.language(languages).locations(locations).track(topics);
+        filterQuery = filterQuery.language(languages).locations(locations);
         twitterStream.filter(filterQuery);
     }
 
