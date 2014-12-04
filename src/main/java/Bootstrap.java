@@ -16,12 +16,13 @@ public class Bootstrap {
     private static final String oAuthConsumer = "VyGyG0F3wWk2c6LMzPIUh7BSR";
     private static final String oAuthSecret = "yuR1EV2yrthnvZMofqPChTgRckGtte3xjGicaatIpMem6VdT8g";
 
+
     public static void main(String[] args) {
         Config config = new Config();
         config.setMessageTimeoutSecs(120);
 
         String collection ="ericgarner";
-        String[] topics = {"#EricGarner", "#ericgarner", "#ferguson"};
+        String[] topics = {"#EricGarner", "#ericgarner", "#ferguson","#icantbreathe"};
         String[] languages = {"en"};
         double[][] locations = new double[][] {
                 {-124.6,18.9},{-67.0,53.6},

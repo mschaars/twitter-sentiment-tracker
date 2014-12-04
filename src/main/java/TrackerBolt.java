@@ -25,8 +25,8 @@ public class TrackerBolt extends BaseRichBolt {
     private static HashSet<String> allWords = new HashSet<>();
 
     private static Set<String> stopWords = new HashSet<String>(Arrays.asList(new String[]{
-            "I", ",", "http", "the", "The", "you", "and", "for", "that", "like", "have", "this", "just", "with", "all", "get", "about",
-            "can", "was", "not", "your", "but", "are", "one", "what", "out", "when", "get", "of", "lol", "now",
+            "i", ",", "http", "the", "The", "you", "and", "for", "that", "like", "have", "this", "just", "with", "all", "get", "about",
+            "can", "was", "so", "thing", "be", "not", "your", "but", "are", "one", "what", "out", "when", "get", "of", "lol", "now",
             "want", "will", "know", "good", "from", "people", "got", "why", "time", "would", "it", "can't",
             "me", "to", "is"
     }));
@@ -35,6 +35,7 @@ public class TrackerBolt extends BaseRichBolt {
     private String[] topics;
     private static DB mongoDB;
     private static DBCollection coll;
+    private static long timer;
 
     public TrackerBolt(String[] topics, String collection) {
         this.topics = topics;
@@ -45,6 +46,7 @@ public class TrackerBolt extends BaseRichBolt {
         topList = new TopKList<>(20, sketch);
 
         recoverStatistics();
+        timer = System.currentTimeMillis();
     }
 
 
@@ -76,7 +78,9 @@ public class TrackerBolt extends BaseRichBolt {
             return v;
         });
 
-        if (tweets.intValue() % 1000 == 0) {
+        if (tweets.intValue() % 5000 == 0) {
+            System.out.println("Seconds passed since last interval = " + (System.currentTimeMillis() - timer) / 1000 );
+            timer = System.currentTimeMillis();
             printCounts();
             exportCounts();
         }

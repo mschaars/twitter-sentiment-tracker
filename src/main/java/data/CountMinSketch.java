@@ -51,6 +51,7 @@ public class CountMinSketch<E extends Serializable> {
 
     private int hash(Object obj, int i) {
         long hash = hashes[i];
+        //TODO find more efficient hashing. This can have overflows.
         return Math.abs(((int)(obj.hashCode() * hash)) % width);
     }
 

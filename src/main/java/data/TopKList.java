@@ -1,6 +1,7 @@
 package data;
 
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -22,23 +23,28 @@ public class TopKList<E extends Serializable> {
     }
 
     public void add(E element, int c) {
-        sketch.increment(element, c);
-        heap.add(element);
+        if (element != null) {
+            sketch.increment(element, c);
+            heap.add(element);
 
-        while (heap.size() > k) {
-            heap.remove();
+            while (heap.size() > k) {
+                heap.remove();
+            }
         }
     }
 
     public List<E> getTopKElements() {
         if (heap != null) {
             List<E> list = new LinkedList<>();
-            for (E e : heap) {
-                list.add(e);
+
+            Iterator<E> it = heap.iterator();
+            while(it.hasNext()) {
+                list.add(it.next());
             }
 
             return list;
         }
+
         return null;
     }
 
