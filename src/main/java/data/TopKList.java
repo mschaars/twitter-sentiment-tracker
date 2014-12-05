@@ -18,8 +18,8 @@ public class TopKList<E extends Serializable> {
     public TopKList(int k, CountMinSketch<E> sketch) {
         this.sketch = sketch;
         this.k = k;
-        this.heap = new PriorityQueue<E>(k, new
-                SketchComparator<E>(sketch));
+        this.heap = new PriorityQueue<>(k, new
+                SketchComparator<>(sketch));
     }
 
     public void add(E element, int c) {

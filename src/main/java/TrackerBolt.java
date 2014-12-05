@@ -7,6 +7,7 @@ import com.google.common.primitives.Ints;
 import com.mongodb.*;
 import data.*;
 import data.MongoClient;
+import orestes.bloomfilter.BloomFilter;
 import twitter4j.GeoLocation;
 
 import java.util.*;
@@ -24,22 +25,15 @@ public class TrackerBolt extends BaseRichBolt {
     private static TopKList<String> topList;
     private static HashSet<String> allWords = new HashSet<>();
 
-    private static Set<String> stopWords = new HashSet<String>(Arrays.asList(new String[]{
-            "i", ",", "http", "the", "The", "you", "and", "for", "that", "like", "have", "this", "just", "with", "all", "get", "about",
-            "can", "was", "so", "thing", "be", "not", "your", "but", "are", "one", "what", "out", "when", "get", "of", "lol", "now",
-            "want", "will", "know", "good", "from", "people", "got", "why", "time", "would", "it", "can't",
-            "me", "to", "is"
-    }));
-
+    private static BloomFilter<String> stopWords = BloomFilterService.initFromFile("stopwords.txt", 0.02);
     private static AtomicInteger tweets = new AtomicInteger(0);
     private String[] topics;
-    private static DB mongoDB;
     private static DBCollection coll;
     private static long timer;
 
     public TrackerBolt(String[] topics, String collection) {
         this.topics = topics;
-        mongoDB = MongoClient.getDBInstance("localhost", "unique", WriteConcern.ACKNOWLEDGED);
+        DB mongoDB = MongoClient.getDBInstance("localhost", "unique", WriteConcern.ACKNOWLEDGED);
         coll = mongoDB.getCollection(collection);
 
         CountMinSketch<String> sketch = new CountMinSketch<>(100, 100, 10);
@@ -79,7 +73,8 @@ public class TrackerBolt extends BaseRichBolt {
         });
 
         if (tweets.intValue() % 5000 == 0) {
-            System.out.println("Seconds passed since last interval = " + (System.currentTimeMillis() - timer) / 1000 );
+            System.out.println("Seconds passed since last interval = "
+                    + (System.currentTimeMillis() - timer) / 1000 );
             timer = System.currentTimeMillis();
             printCounts();
             exportCounts();
@@ -95,18 +90,18 @@ public class TrackerBolt extends BaseRichBolt {
      */
     private boolean containsTopics(String[] words) {
         for (String word : words) {
-            allWords.add(word);
-/*            for (String topic : topics) {
-                if (word.equals(topic)) {
-                    return true;
+             for (String topic : topics) {
+                    if (word.equals(topic)) {
+                        return true;
+                    }
                 }
-            }*/
         }
         return false;
     }
 
     private void captureSentiment(String[] words) {
         for (String word : words) {
+            allWords.add(word);
             if (!stopWords.contains(word)) {
                 if (word.contains(".") || word.contains("$")) {
                     word = word.replace(".", " ");
@@ -194,7 +189,7 @@ public class TrackerBolt extends BaseRichBolt {
      * Print current statistics to terminal.
      */
     public void printCounts() {
-        System.out.println("unique words = " + allWords.size());
+        System.out.println("unique words in matching tweets= " + allWords.size());
 
         List<String> scores = topList.getTopKElements();
         for (Map.Entry<String, FilterItem> e : statistics.entrySet()) {

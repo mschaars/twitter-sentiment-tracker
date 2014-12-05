@@ -23,7 +23,7 @@ public class Bootstrap {
         config.setMessageTimeoutSecs(120);
 
         String collection ="ericgarner";
-        String[] topics = {"#EricGarner", "#ericgarner", "#ferguson","#icantbreathe"};
+        String[] topics = {"#EricGarner", "#ericgarner", "#ferguson","#icantbreathe", "#alivewhileblack"};
         String[] languages = {"en"};
         double[][] locations = new double[][] {
                 {-124.6,18.9},{-67.0,53.6},

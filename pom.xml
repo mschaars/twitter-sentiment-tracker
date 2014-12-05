@@ -44,7 +44,11 @@
             <artifactId>guava</artifactId>
             <version>18.0</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.baqend</groupId>
+            <artifactId>bloom-filter</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -81,6 +85,10 @@
             <releases>
                 <enabled>true</enabled>
             </releases>
+        </repository>
+        <repository>
+            <id>orestes-bloom-filter</id>
+            <url>https://raw.githubusercontent.com/Baqend/Orestes-Bloomfilter/master/maven-repo</url>
         </repository>
     </repositories>
 </project>
