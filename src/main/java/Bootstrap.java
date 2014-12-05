@@ -18,6 +18,7 @@ public class Bootstrap {
 
 
     public static void main(String[] args) {
+
         Config config = new Config();
         config.setMessageTimeoutSecs(120);
 

@@ -39,7 +39,7 @@ public class TrackerBolt extends BaseRichBolt {
 
     public TrackerBolt(String[] topics, String collection) {
         this.topics = topics;
-        mongoDB = MongoClient.getDBInstance("localhost", "ericgarner", WriteConcern.ACKNOWLEDGED);
+        mongoDB = MongoClient.getDBInstance("localhost", "unique", WriteConcern.ACKNOWLEDGED);
         coll = mongoDB.getCollection(collection);
 
         CountMinSketch<String> sketch = new CountMinSketch<>(100, 100, 10);
@@ -95,15 +95,14 @@ public class TrackerBolt extends BaseRichBolt {
      */
     private boolean containsTopics(String[] words) {
         for (String word : words) {
-            //    allWords.add(word);
-            for (String topic : topics) {
+            allWords.add(word);
+/*            for (String topic : topics) {
                 if (word.equals(topic)) {
                     return true;
                 }
-            }
+            }*/
         }
         return false;
-
     }
 
     private void captureSentiment(String[] words) {
@@ -195,7 +194,7 @@ public class TrackerBolt extends BaseRichBolt {
      * Print current statistics to terminal.
      */
     public void printCounts() {
-        //System.out.println("unique words = " + allWords.size());
+        System.out.println("unique words = " + allWords.size());
 
         List<String> scores = topList.getTopKElements();
         for (Map.Entry<String, FilterItem> e : statistics.entrySet()) {

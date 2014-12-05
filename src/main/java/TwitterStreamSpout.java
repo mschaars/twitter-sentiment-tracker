@@ -83,6 +83,7 @@ public class TwitterStreamSpout extends BaseRichSpout {
     @Override
     public void nextTuple() {
         Status ret = incomingQueue.poll();
+
         //TODO how to simulate this from historical data?
         if (ret == null) {
             Utils.sleep(25);
