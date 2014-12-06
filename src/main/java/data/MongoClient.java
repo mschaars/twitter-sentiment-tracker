@@ -16,6 +16,7 @@ public class MongoClient {
             try {
                 mongoClient = new com.mongodb.MongoClient(host, 27017);
                 mongoClient.setWriteConcern(writeConcern);
+
             } catch (UnknownHostException e) {
                 System.out.println("Failed to connect to MongoDB server");
             }

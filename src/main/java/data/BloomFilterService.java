@@ -34,16 +34,13 @@ public class BloomFilterService {
             String string;
 
             while ((string = in.readLine()) != null) {
-                list.add(string);
+                list.add(string.trim());
             }
         } catch (IOException e) {
-            e.printStackTrace();
         }
 
         BloomFilter<String> bf = new FilterBuilder(list.size(), eps).<String>buildBloomFilter();
-        for (int i = 0; i < list.size(); i++) {
-            bf.add(list.poll());
-        }
+        bf.addAll(list);
 
         return bf;
     }

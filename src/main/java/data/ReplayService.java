@@ -41,7 +41,9 @@ public class ReplayService {
      * @return
      */
     public static String getNextTweet() {
-        rateLimiter.acquire();
+        if (rateLimiter != null){
+            rateLimiter.acquire();
+        }
         return queue.poll();
     }
 }

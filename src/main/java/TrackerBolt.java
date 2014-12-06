@@ -23,9 +23,16 @@ public class TrackerBolt extends BaseRichBolt {
 
     private static ConcurrentHashMap<String, FilterItem> statistics = new ConcurrentHashMap<>();
     private static TopKList<String> topList;
+    private static TopKList<String> topPositives;
+    private static TopKList<String> topNegatives;
+
+
     private static HashSet<String> allWords = new HashSet<>();
 
     private static BloomFilter<String> stopWords = BloomFilterService.initFromFile("stopwords.txt", 0.02);
+    private static BloomFilter<String> positiveWords =  BloomFilterService.initFromFile("positive.txt", 0.02);
+    private static BloomFilter<String> negativeWords =  BloomFilterService.initFromFile("negative.txt", 0.02);
+
     private static AtomicInteger tweets = new AtomicInteger(0);
     private String[] topics;
     private static DBCollection coll;
@@ -39,7 +46,13 @@ public class TrackerBolt extends BaseRichBolt {
         CountMinSketch<String> sketch = new CountMinSketch<>(100, 100, 10);
         topList = new TopKList<>(20, sketch);
 
-        recoverStatistics();
+        CountMinSketch<String> positiveSketch = new CountMinSketch<>(100, 100, 10);
+        topPositives = new TopKList<>(20, positiveSketch);
+
+        CountMinSketch<String> negativeSketch = new CountMinSketch<>(100, 100, 10);
+        topNegatives = new TopKList<>(20, negativeSketch);
+
+        //recoverStatistics();
         timer = System.currentTimeMillis();
     }
 
@@ -90,6 +103,7 @@ public class TrackerBolt extends BaseRichBolt {
      */
     private boolean containsTopics(String[] words) {
         for (String word : words) {
+            allWords.add(word);
              for (String topic : topics) {
                     if (word.equals(topic)) {
                         return true;
@@ -101,13 +115,20 @@ public class TrackerBolt extends BaseRichBolt {
 
     private void captureSentiment(String[] words) {
         for (String word : words) {
-            allWords.add(word);
-            if (!stopWords.contains(word)) {
+
+            if (!stopWords.contains(word.trim())) {
+                if (positiveWords.contains(word)) {
+                    topPositives.add(word, 1);
+                }
+                if (negativeWords.contains(word)) {
+                    topNegatives.add(word, 1);
+                }
                 if (word.contains(".") || word.contains("$")) {
                     word = word.replace(".", " ");
                 }
                 topList.add(word, 1);
             }
+
         }
     }
 
@@ -189,7 +210,7 @@ public class TrackerBolt extends BaseRichBolt {
      * Print current statistics to terminal.
      */
     public void printCounts() {
-        System.out.println("unique words in matching tweets= " + allWords.size());
+        System.out.println("unique words =  " + allWords.size());
 
         List<String> scores = topList.getTopKElements();
         for (Map.Entry<String, FilterItem> e : statistics.entrySet()) {
@@ -203,6 +224,16 @@ public class TrackerBolt extends BaseRichBolt {
             System.out.println("Word = " + item + ", count = " + topList.getCount(item));
         }
 
+        System.out.println("Most popular positive words in relevant tweets:");
+
+        for (String item : topPositives.getTopKElements()) {
+            System.out.println("Word = " + item + ", count = " + topPositives.getCount(item));
+        }
+
+        System.out.println("Most popular negative words in relevant tweets:");
+        for (String item : topNegatives.getTopKElements()) {
+            System.out.println("Word = " + item + ", count = " + topNegatives.getCount(item));
+        }
         System.out.println("Total tweets this session = " + tweets.toString() + "\n ###############################");
     }
 
